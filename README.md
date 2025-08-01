@@ -14,6 +14,8 @@ This repository contains the implementation of **Atomizer**, a novel toolpath ge
 
 [Computer Graphics Forum](https://doi.org/10.1111/cgf.70189) ([Proceedings of the Symposium on Geometry Processing](https://sgp2025.my.canva.site/program-page-sgp)), 2025
 
+**SGP Honorable Mention**
+
 ## 🌟 Key Features
 
 * Toolpath generation using frames (i.e., atoms) instead of slices
