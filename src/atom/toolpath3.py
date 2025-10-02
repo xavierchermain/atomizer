@@ -178,18 +178,26 @@ class Toolpath:
         point_new = np.full(shape=(MAX_POINT, 3), dtype=np.float32, fill_value=0.0)
         normal_new = np.full(shape=(MAX_POINT, 2), dtype=np.float32, fill_value=0.0)
         travel_type_new = np.full(shape=MAX_POINT, dtype=np.int32, fill_value=-1)
+        width_new = np.full(shape=MAX_POINT, dtype=np.float32, fill_value=0.0)
+        height_new = np.full(shape=MAX_POINT, dtype=np.float32, fill_value=0.0)
         self.point_count = toolpath_tesselate_orientation(
             self.point,
             self.tool_orientation,
             self.travel_type,
+            self.width,
+            self.height,
             point_new,
             normal_new,
             travel_type_new,
+            width_new,
+            height_new,
             max_angle_radians,
         )
         self.point = point_new[: self.point_count, :]
         self.tool_orientation = normal_new[: self.point_count, :]
         self.travel_type = travel_type_new[: self.point_count]
+        self.width = width_new[:self.point_count]
+        self.height = height_new[:self.point_count]
 
     
     
@@ -858,9 +866,13 @@ def toolpath_tesselate_orientation(
     point_in: ti.types.ndarray(),
     normal_in: ti.types.ndarray(),
     travel_type_in: ti.types.ndarray(),
+    width_in: ti.types.ndarray(),
+    height_in: ti.types.ndarray(),
     point_out: ti.types.ndarray(),
     normal_out: ti.types.ndarray(),
     travel_type_out: ti.types.ndarray(),
+    width_out: ti.types.ndarray(),
+    height_out: ti.types.ndarray(),
     max_angle_diff_radians: float,
 ) -> int:
     current_index = 0
@@ -895,6 +907,8 @@ def toolpath_tesselate_orientation(
                 t = j / endpoint_subindex
                 point_j = point_i + t * vector
                 normal_j = direction.nlerp(normal_i, normal_ip1, t)
+                width_j = ti.math.mix(width_in[i], width_in[ip1], t)
+                height_j = ti.math.mix(height_in[i], height_in[ip1], t)
 
                 global_index = current_index + current_subindex
                 for k in ti.static(range(3)):
@@ -907,6 +921,8 @@ def toolpath_tesselate_orientation(
                     travel_type_out[global_index] = travel_type_in[i]
                 else:
                     travel_type_out[global_index] = travel_type_in[ip1]
+                width_out[global_index] = width_j
+                height_out[global_index] = height_j
 
                 current_subindex += 1
 
@@ -918,6 +934,8 @@ def toolpath_tesselate_orientation(
             for k in ti.static(range(2)):
                 normal_out[current_index, k] = normal_in[i, k]
             travel_type_out[current_index] = travel_type_in[i]
+            width_out[current_index] = width_in[i]
+            height_out[current_index] = height_in[i]
             current_index += 1
 
     for k in ti.static(range(3)):
@@ -925,6 +943,8 @@ def toolpath_tesselate_orientation(
     for k in ti.static(range(2)):
         normal_out[current_index, k] = normal_in[normal_in.shape[0] - 1, k]
     travel_type_out[current_index] = travel_type_in[normal_in.shape[0] - 1]
+    width_out[current_index] = width_in[normal_in.shape[0] - 1]
+    height_out[current_index] = height_in[normal_in.shape[0] - 1]
     current_index += 1
     # return the number of points
     return current_index

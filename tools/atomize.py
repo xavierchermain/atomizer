@@ -172,6 +172,10 @@ if __name__ == "__main__":
     extract_explicit_atoms_cmd = f"python tools/extract_explicit_atoms.py {params.sdf_path} {params.triphasor_path} {params.frame_path} --logpath {params.log_path}"
     order_atoms_cmd = f"python tools/order_atoms.py {params.sdf_path} {params.frame_path} {params.toolpath_path} --logpath {params.log_path}"
     smooth_toolpath_point_cmd = f"python tools/smooth_toolpath_point.py {params.toolpath_path} {params.smoothed_toolpath_path} {params.smoothing_iter_count}"
+    tesselate_toolpath_orientations_cmd = f"python tools/tesselate_toolpath_orientations.py {params.smoothed_toolpath_path} {params.smoothed_tesselated_toolpath_path} {params.degree_angle_max_diff}"
+    add_platform_cmd = f"python tools/add_platform.py {params.smoothed_tesselated_toolpath_path} {params.platform_toolpath_path} {params.deposition_width} {layer_height}"
+    toolpath_to_gcode_cmd = f"python tools/toolpath_to_gcode.py {params.platform_toolpath_path} {params.gcode_path}"
+    ratrig_to_craftware_cmd = f"python tools/ratrig_to_craftware.py {params.gcode_path} {params.craftware_gcode_path}"
 
     visualize_bpn_cmd = f"python tools/visualize_bpn.py {params.bpn_path}"
     visualize_bpn_sdf_cmd = (
@@ -282,8 +286,17 @@ if __name__ == "__main__":
     os.system(order_atoms_cmd)
     log_file = open(params.log_path, "a", encoding="utf-8")
 
-    print("\nStep 10 Starting: Smooth the Toolpath\n")
-    log_file.write("\n# Smooth and Tesselate the Toolpath\n\n")
+    print("\nStep 10 Starting: Smooth, Tesselate and Add a Platform\n")
+    log_file.write("\n# Smooth, Tesselate and Add a Platform\n\n")
     log_file.close()
     os.system(smooth_toolpath_point_cmd)
+    os.system(tesselate_toolpath_orientations_cmd)
+    os.system(add_platform_cmd)
+    log_file = open(params.log_path, "a", encoding="utf-8")
+
+    print("\nStep 11 Starting: G-Code Generation\n")
+    log_file.write("\n# G-Code Generation\n\n")
+    log_file.close()
+    os.system(toolpath_to_gcode_cmd)
+    os.system(ratrig_to_craftware_cmd)
     log_file = open(params.log_path, "a", encoding="utf-8")
