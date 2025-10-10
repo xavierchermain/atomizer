@@ -17,6 +17,7 @@ class Parameters:
         self.degree_angle_max_diff: float = None
         self.smoothing_iter_count: int = None
         self.ortho_to_wall: bool = None
+        self.infill: bool = None
 
         self.log_path: str = None
         self.stl_path: str = None
@@ -48,6 +49,10 @@ class Parameters:
         self.all_up = param_dict.get("all_up")
         if self.all_up is None:
             self.all_up = False
+
+        self.infill = param_dict.get("infill")
+        if self.infill is None:
+            self.infill = False
 
         self.top_lines = param_dict.get("top_lines")
         self.bottom_lines = param_dict.get("bottom_lines")
@@ -148,6 +153,7 @@ if __name__ == "__main__":
     process_mesh_command = f"blender -b -P tools/process_for_atomizer.py -- {params.stl_path} {params.obj_path} {cell_sides_length * 0.5:.6f}"
     obj_to_bpn_cmd = f"python tools/obj_to_bpn.py {params.obj_path} {params.bpn_path}"
     bpn_to_sdf_cmd = f"python tools/bpn_to_sdf.py {params.bpn_path} {params.sdf_path} {params.deposition_width:.2f}"
+    sdf_to_isdf_cmd = f"python tools/sdf_to_isdf.py {params.bpn_path} {params.sdf_path} {params.sdf_path} no_gui=True"
 
     compute_tool_orientations_cmd = f"python tools/compute_tool_orientations.py {params.sdf_path} {params.direction_path} --maxslope {params.max_slope}"
     if params.ortho_to_wall:
@@ -230,8 +236,13 @@ if __name__ == "__main__":
     str_to_print = "\nStep 3 Starting: Point Normal Cloud to SDF\n"
     print(str_to_print)
     os.system(bpn_to_sdf_cmd)
-    log_file = open(params.log_path, "a", encoding="utf-8")
 
+    if params.infill:
+        str_to_print = "\nStep 3 Bis Starting: SDF to SDF with Infill\n"
+        print(str_to_print)
+        os.system(sdf_to_isdf_cmd)
+
+    log_file = open(params.log_path, "a", encoding="utf-8")
     print("\nStep 4 Starting: Direction Field Computation\n")
     log_file.write("\n# Direction Field Computation\n\n")
     log_file.close()
