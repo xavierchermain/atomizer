@@ -39,6 +39,24 @@ SPATIAL_WEIGHT_EXPONENT = 1
 SPATIAL_FILTER_RADIUS = 2.0
 
 
+def generate_supports(
+    sdf: solid3.SDF,
+    input_sdf,
+    flag_field,
+    offset: ti.math.vec3,
+    period: float,
+):
+    flag_supports(sdf.sdf, sdf.grid.cell_3dcount, flag_field)
+    process_flagged_support(
+        input_sdf,
+        sdf.sdf,
+        flag_field,
+        sdf.grid.cell_sides_length,
+        offset,
+        period,
+    )
+
+
 @ti.kernel
 def init_spherical_direction_field_from_sdf(
     sdf: ti.template(),
@@ -681,6 +699,119 @@ def frame_field_filter_point_too_close_to_boundary(
 
         if is_wall_region_i or is_top_or_bottom_region_i:
             point[i].x = ti.math.nan
+
+
+@ti.kernel
+def sdf_generate_infill(
+    input_sdf: ti.template(),
+    output_sdf: ti.template(),
+    cell_sides_length: float,
+    offset: ti.math.vec3,
+    period: float,
+    shell: float,
+    gyroid: bool,
+):
+    layer_height = layer_height_from_cell_sides_length(cell_sides_length)
+    deposition_width = deposition_width_from_layer_height(layer_height)
+
+    wall_width = shell * deposition_width
+    grid_scale = period * deposition_width
+
+    origin = ti.math.vec3(0.0)
+    for sdf_i3 in ti.grouped(input_sdf):
+        cell_center = (
+            grid3.cell_center_point(sdf_i3, origin, cell_sides_length) + offset
+        )
+        # Wall width: 2 deposition width
+        fromCenter = (
+            -ti.abs(ti.math.mod(cell_center, grid_scale) - 0.5 * grid_scale)
+            + 0.5 * grid_scale
+            - 0.5
+            * ti.math.vec3(
+                deposition_width * 2.0, deposition_width * 2.0, layer_height * 2
+            )
+        )
+        # Wall width: 1 deposition width
+        # fromCenter = (
+        #     -ti.abs(ti.math.mod(cell_center, grid_scale) - 0.5 * grid_scale)
+        #     + 0.5 * grid_scale
+        #     - 0.5 * ti.math.vec3(deposition_width, deposition_width, layer_height * 2)
+        # )
+        # infill_sdf is the SDF of the infill, the intersection and shell will be added after
+
+        # infill_sdf = ti.min(ti.min(fromCenter.x, fromCenter.y), fromCenter.z)
+        # infill_sdf = ti.min(fromCenter.x, fromCenter.y)
+        infill_sdf = fromCenter.x
+
+        if gyroid:
+            p = cell_center / (grid_scale * 0.1)
+            p[2] /= 8
+            infill_sdf = (
+                ti.math.dot(ti.math.sin(p.xyz), ti.math.cos(p.yzx))
+                * 0.7
+                * (grid_scale * 0.1)
+            )
+            infill_sdf = abs(infill_sdf) - deposition_width * 0.5
+
+        infill = ti.max(input_sdf[sdf_i3], infill_sdf)
+        hollow_sdf = (
+            -input_sdf[sdf_i3] - wall_width
+            if input_sdf[sdf_i3] < -0.5 * wall_width
+            else input_sdf[sdf_i3]
+        )
+        output_sdf[sdf_i3] = ti.min(infill, hollow_sdf)
+
+
+@ti.kernel
+def flag_supports(
+    sdf: ti.template(), cell_3dcount: ti.math.ivec3, flag_field: ti.template()
+):
+    for sdf_i3 in ti.grouped(sdf):
+        flag_field[sdf_i3] = ti.int8(0)
+        for z in range(sdf_i3.z, cell_3dcount.z):
+            if sdf[ti.math.ivec3(sdf_i3.x, sdf_i3.y, z)] < 0:
+                flag_field[sdf_i3] = ti.int8(1)
+                break
+
+
+@ti.kernel
+def process_flagged_support(
+    input_sdf: ti.template(),
+    output_sdf: ti.template(),
+    flag_field: ti.template(),
+    cell_sides_length: float,
+    offset: ti.math.vec3,
+    period: float,
+):
+    origin = ti.math.vec3(0.0)
+    layer_height = layer_height_from_cell_sides_length(cell_sides_length)
+    nozzle_width = deposition_width_from_layer_height(layer_height)
+    grid_scale = period * nozzle_width
+
+    for sdf_i3 in ti.grouped(input_sdf):
+        if flag_field[sdf_i3] == 1 and input_sdf[sdf_i3] > 0:
+            cell_center = (
+                grid3.cell_center_point(sdf_i3, origin, cell_sides_length)
+                + ti.math.vec3(0, 0, 4 * layer_height)
+                + offset
+            )
+            fromCenter = (
+                -ti.abs(ti.math.mod(cell_center, grid_scale) - 0.5 * grid_scale)
+                + 0.5 * grid_scale
+                - 0.5 * ti.math.vec3(nozzle_width, nozzle_width, layer_height)
+            )
+            support_sdf = ti.min(
+                ti.min(
+                    ti.max(fromCenter.x, fromCenter.y),
+                    ti.max(fromCenter.y, fromCenter.z),
+                ),
+                ti.max(fromCenter.x, fromCenter.z),
+            )
+
+            # Write the support SDF in this case
+            output_sdf[sdf_i3] = support_sdf
+        else:
+            output_sdf[sdf_i3] = input_sdf[sdf_i3]
 
 
 @ti.func
