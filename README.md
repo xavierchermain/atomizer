@@ -16,6 +16,10 @@ This repository contains the implementation of **Atomizer**, a novel toolpath ge
 
 **SGP Honorable Mention**
 
+Replicability Stamp: [http://www.replicabilitystamp.org#https-github-com-xavierchermain-atomizer](http://www.replicabilitystamp.org#https-github-com-xavierchermain-atomizer)
+
+[![](https://www.replicabilitystamp.org/logo/Reproducibility-small.png)](http://www.replicabilitystamp.org#https-github-com-xavierchermain-atomizer)
+
 ## Key Features
 
 * Toolpath generation using frames (i.e., atoms) instead of slices
@@ -45,8 +49,8 @@ blender --python see_toolpath_with_blender.py -- "data/mesh/tubes.ply"
 
 **Notes**
 
-* The script `install_git_blender_miniconda.ps1` sets up Git, Blender, and Miniconda if needed.
-* `pip install -e .` installs the repo in editable mode inside the `atomizer` conda env
+* The script `install_git_blender_miniconda.ps1` sets up Git, Blender, and Miniconda if needed. You have to download the script [install_git_blender_miniconda.ps1](./install_git_blender_miniconda.ps1).
+* `pip install -e .` installs the local library in editable mode inside the `atomizer` conda env
 * If `blender` isn’t on your `PATH`, use the full path to `blender.exe`.
 * If something goes wrong, please read the following.
 
@@ -207,7 +211,7 @@ atomizer/
 
 ## 3D Printer
 
-Atomizer was tested on a custom 3-axis printer with independently controlled Z-axis screws. The customization is intended for experts; consequently, we do not provide any GCODE to prevent users from damaging their machines. The code generates only the sequence of positions, each associated with a tool orientation and a travel type (deposition or no deposition). The generated toolpaths are available in [`data/toolpath`](data/toolpath). To print, you must use the inverse kinematics model of your machine.
+Atomizer was tested on a custom 5-axis printer with independently controlled Z-axis screws. The customization is intended for experts and is described in another article : [https://xavierchermain.github.io/publications/threez](https://xavierchermain.github.io/publications/threez). For now, the code generates the sequence of positions, each associated with a tool orientation and a travel type (deposition or no deposition). The generated toolpaths are available in [`data/toolpath`](data/toolpath). To print, you must use the inverse kinematics model of your machine. The G-code generated for our machine is located in [`data/gcode`](data/gcode). Note that files ending with `_craftware.gcode` can be opened with Craftware Legacy to inspect the toolpath (the travel moves represent the tool orientations).
 
 ## Citation
 
