@@ -79,5 +79,28 @@ if ($env:Path -notmatch [Regex]::Escape($blenderDir)) {
 Write-Host "Refreshing PATH environment variables..."
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
+# Assuming default install path (you can make this more robust)
+$condaPath = "$env:USERPROFILE\Miniconda3"
+
+# Add Conda to USER PATH if not already there
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$condaScripts = "$condaPath\Scripts"
+$condaBin = "$condaPath"
+
+if ($userPath -notmatch [Regex]::Escape($condaScripts)) {
+    $newPath = $userPath.TrimEnd(';') + ';' + $condaBin + ';' + $condaScripts
+    [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+    Write-Host "Added Miniconda to USER PATH." -ForegroundColor Green
+} else {
+    Write-Host "Miniconda already in USER PATH." -ForegroundColor Cyan
+}
+
+# Make it available in the current session
+$env:Path += ";$condaBin;$condaScripts"
+
+# Run conda init for PowerShell
+Write-Host "Running 'conda init' for PowerShell..."
+& "$condaScripts\conda.exe" init powershell
+
 Write-Host "`nAll done!"
 Write-Host "Close and reopen your terminal or log out/in to ensure PATH changes are fully applied." -ForegroundColor Yellow
