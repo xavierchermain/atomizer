@@ -128,6 +128,7 @@ if __name__ == "__main__":
     toolpath_path = args.toolpath_path
     toolpath = atom.toolpath3.Toolpath()
     toolpath.load(toolpath_path)
+    toolpath.point = toolpath.point[: toolpath.point_count]
     gcode_path = args.gcode_path
     width = float(args.width_override)
     height = float(args.height_override)
