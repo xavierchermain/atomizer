@@ -33,6 +33,7 @@ This set of PowerShell commands reproduces the colored mesh of Fig. 17 (top left
 
 Open **PowerShell as Administrator**, then run:
 ```ps1
+winget source update
 .\install_git_blender_miniconda.ps1
 ```
 Close **and reopen** PowerShell. Then run:

@@ -5,10 +5,6 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit 1
 }
 
-# Update WinGet sources
-Write-Host "Updating WinGet sources..."
-winget source update
-
 function Install-App {
     param(
         [string]$Id,
@@ -79,8 +75,12 @@ if ($env:Path -notmatch [Regex]::Escape($blenderDir)) {
 Write-Host "Refreshing PATH environment variables..."
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
-# Assuming default install path (you can make this more robust)
-$condaPath = "$env:USERPROFILE\Miniconda3"
+$condaInfo = winget list --id "Anaconda.Miniconda3" -e | Select-String "Location"
+if ($condaInfo) {
+    $condaPath = ($condaInfo -split '\s{2,}')[-1].Trim()
+} else {
+    $condaPath = "$env:USERPROFILE\Miniconda3"
+}
 
 # Add Conda to USER PATH if not already there
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
