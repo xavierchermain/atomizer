@@ -19,4 +19,5 @@ dependencies = [
     "taichi",
     "tqdm",
     "Pillow",
+    "typing_extensions>=4.0",
 ]
