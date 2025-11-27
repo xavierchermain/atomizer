@@ -226,6 +226,8 @@ title = {{Atomizer: Beyond Non-Planar Slicing for Fused Filament Fabrication}},
 journal = {Computer Graphics Forum (Proceedings of the Symposium on Geometry Processing)},
 year = {2025},
 doi = {https://doi.org/10.1111/cgf.70189},
+volume = {44},
+number = {5},
 }
 ```
 
